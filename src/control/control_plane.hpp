@@ -16,6 +16,7 @@
 #include "../network/connection.hpp"
 
 namespace plugin { class PluginManager; }
+namespace world { class WorldInspector; }
 
 namespace control {
 // Owns the whole control plane: event hub, packet pipeline, API, REST and
@@ -26,7 +27,7 @@ public:
     // game_client: the connection facing the Growtopia-compatible client
     // (network::Server); upstream: the connection facing your server (network::Client).
     ControlPlane(core::Config& config, network::IConnection& game_client, network::IConnection& upstream);
-    ~ControlPlane();
+    ~ControlPlane(); // out of line: WorldInspector is incomplete here
 
     ControlPlane(const ControlPlane&) = delete;
     ControlPlane& operator=(const ControlPlane&) = delete;
@@ -59,6 +60,7 @@ private:
     TemplateStore templates_;
     ControlApi api_;
     std::unique_ptr<plugin::PluginManager> plugins_;
+    std::unique_ptr<world::WorldInspector> worlds_;
     std::unique_ptr<RestServer> rest_;
     std::unique_ptr<WsServer> ws_;
     std::vector<event::ScopedHandle> handles_;

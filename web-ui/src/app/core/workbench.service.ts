@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Dir } from './models';
 import { PacketSpec } from './spec';
 
-export type Tab = 'stream' | 'intercept' | 'inject' | 'plugins' | 'settings' | 'dashboard';
+export type Tab = 'stream' | 'intercept' | 'inject' | 'worlds' | 'plugins' | 'settings' | 'dashboard';
 
 /** Cross-view state: current tab and a packet handed from the stream to the injector. */
 @Injectable({ providedIn: 'root' })

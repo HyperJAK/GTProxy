@@ -11,7 +11,8 @@ add_executable(GTProxy_tests
     control/test_integration.cpp
     control/test_enet_loopback.cpp
     test_config.cpp
-    test_plugins.cpp)
+    test_plugins.cpp
+    test_worlds.cpp)
 
 target_include_directories(GTProxy_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src

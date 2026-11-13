@@ -24,6 +24,7 @@ drop, inject, script and replay traffic so you can learn and test the protocol.
 | **Intercept (Burp-style)** | Hold packets that match rules, edit fields or raw hex, then forward or drop. Ordering is preserved. |
 | **Inject** | Send hand-built packets to the server or the client; save them as templates. |
 | **Dashboard** | Peer connection state, round-trip latency, packet/byte counters and rates, connection log. |
+| **World inspector** | Vending machines (item, raw price, tile), display blocks and dropped items with quantities per world, remembered across worlds and searchable by item. See [docs/WORLDS.md](docs/WORLDS.md) for what is and is not reliable. |
 | **Plugins** | Sandboxed Lua plugins with `onPacketIn/onPacketOut/onConnect/onDisconnect`; manage them (enable / disable / reload / logs) in the UI. Two examples included. |
 | **Profiles** | Several server profiles in `config.json`, switchable from the UI. |
 | **Record & replay** | Record sessions to `sessions/*.jsonl`; replay them offline through your plugins. |
@@ -155,7 +156,7 @@ Press *Rescan folder* in the Plugins tab and tick the checkbox. Full guide, API 
 
 Everything below runs on Linux without a Growtopia client or any server:
 
-* **C++ (`GTProxy_tests`, 72 tests):** packet codec incl. fuzzing, hand-assembled packet fixtures, the packet pipeline with fake connections, the control API, WebSocket/REST integration on loopback (including origin/host rejection), **real ENet loopback** (fake client → proxy → fake upstream, with intercept), session record/replay, config/profiles, structured logging, and the plugin runtime (sandbox, infinite loop, memory bomb, isolation, circuit breaker, example plugins). Plugin/flow/codec tests also ran clean under valgrind.
+* **C++ (`GTProxy_tests`, 80 tests):** packet codec incl. fuzzing, hand-assembled packet fixtures, the packet pipeline with fake connections, the control API, WebSocket/REST integration on loopback (including origin/host rejection), **real ENet loopback** (fake client → proxy → fake upstream, with intercept), session record/replay, config/profiles, structured logging, and the plugin runtime (sandbox, infinite loop, memory bomb, isolation, circuit breaker, example plugins). Plugin/flow/codec tests also ran clean under valgrind.
 * **UI (`ng test`, 15 tests):** packet store, filters, hex search, hex dump, edit-spec conversion.
 
 ### Untested in sandbox
@@ -166,9 +167,9 @@ Everything below runs on Linux without a Growtopia client or any server:
 * **The HTTPS `server_data.php` path against a non-direct profile.** Only the direct path ran end to end (via `GTProxy_fake_peers`).
 * The browser UI was exercised with headless Chromium against the real proxy binary, not on other browsers.
 
-### Upstream fixes needed to build
+### Upstream fixes needed to build (and found while adding the world inspector)
 
-Upstream `HEAD` (`f51c5a3`) did not compile against eventpp 0.1.3: the dispatcher policy used `get_event`/`can_continue_invoking` (eventpp 0.1.x looks for `getEvent`/`canContinueInvoking`), and three call sites used removed `appendListener`/`removeListener`. Also fixed: IPv4 octets equal to `0` (e.g. `10.0.0.5`) were treated as hostnames and sent to DNS-over-HTTPS; a `fmt::format!` typo in `main.cpp`.
+Upstream `HEAD` (`f51c5a3`) did not compile against eventpp 0.1.3: the dispatcher policy used `get_event`/`can_continue_invoking` (eventpp 0.1.x looks for `getEvent`/`canContinueInvoking`), and three call sites used removed `appendListener`/`removeListener`. Also fixed: IPv4 octets equal to `0` (e.g. `10.0.0.5`) were treated as hostnames and sent to DNS-over-HTTPS; a `fmt::format!` typo in `main.cpp`; a null dereference when parsing a map before `items.dat` was loaded; the unsigned `ItemChangeObject` change type (drops were never added); dropped-item coordinates read as ints (details and caveats in docs/WORLDS.md).
 
 ## Roadmap
 

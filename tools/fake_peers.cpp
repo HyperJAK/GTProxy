@@ -65,6 +65,31 @@ Bytes call(const std::string& fn, const std::string& arg, std::int32_t number)
     return game(1, 0xFFFFFFFF, e);
 }
 
+// A tiny world: 4x3 tiles, a vending machine at (1,0) selling item 242, a
+// display box at (2,1), and a few dropped stacks. Names are "item #id"
+// unless the proxy has an items.dat loaded.
+Bytes map(const std::string& name, std::uint32_t vend_item, std::uint32_t price, std::uint8_t drop_amount)
+{
+    Bytes b;
+    put<std::uint16_t>(b, 0x16); put<std::uint32_t>(b, 0);
+    put<std::uint16_t>(b, static_cast<std::uint16_t>(name.size()));
+    for (char c : name) b.push_back(static_cast<std::byte>(c));
+    put<std::int32_t>(b, 4); put<std::int32_t>(b, 3); put<std::uint32_t>(b, 12);
+    for (int i = 0; i < 5; ++i) put<std::uint8_t>(b, 0);
+    for (int i = 0; i < 12; ++i) {
+        put<std::uint16_t>(b, i == 1 ? 2978 : i == 6 ? 1008 : 0); put<std::uint16_t>(b, 0); put<std::uint16_t>(b, 0);
+        if (i == 1) { put<std::uint16_t>(b, 1); put<std::uint8_t>(b, 24); put<std::uint32_t>(b, vend_item); put<std::uint32_t>(b, price); }
+        else if (i == 6) { put<std::uint16_t>(b, 1); put<std::uint8_t>(b, 23); put<std::uint32_t>(b, 3); }
+        else put<std::uint16_t>(b, 0);
+    }
+    for (int i = 0; i < 12; ++i) put<std::uint8_t>(b, 0);
+    put<std::uint32_t>(b, 3); put<std::uint32_t>(b, 100);
+    const struct { std::uint16_t item; float x, y; std::uint8_t n; std::uint32_t id; } drops[] = {
+        { 2, 64.0f, 32.0f, drop_amount, 1 }, { 2, 96.0f, 64.0f, 25, 2 }, { 242, 32.0f, 32.0f, 1, 3 } };
+    for (const auto& d : drops) { put<std::uint16_t>(b, d.item); put<float>(b, d.x); put<float>(b, d.y); put<std::uint8_t>(b, d.n); put<std::uint8_t>(b, 0); put<std::uint32_t>(b, d.id); }
+    return b;
+}
+
 std::string write_cfg(int port)
 {
     const auto path = (std::filesystem::temp_directory_path() / ("fake_peers_" + std::to_string(port) + ".json")).string();
@@ -126,6 +151,11 @@ int main(int argc, char** argv)
             std::ignore = upstream.write(call("OnConsoleMessage", "`2fake server says hi", tick));
             std::ignore = client.write(game(0, 7, {}, 10.0f + static_cast<float>(tick), 20.0f));
             std::ignore = upstream.write(text(3, "action|log\nmsg|server tick " + std::to_string(tick)));
+            // every 10 s the "server" moves the client to the other demo world
+            if (tick % 10 == 1) {
+                const bool shop = (tick / 10) % 2 == 0;
+                std::ignore = upstream.write(game(4, 0xFFFFFFFF, map(shop ? "DEMOSHOP" : "DEMOFARM", shop ? 242 : 5, shop ? 3 : 0, shop ? 10 : 200)));
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }

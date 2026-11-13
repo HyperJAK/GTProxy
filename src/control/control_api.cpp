@@ -68,6 +68,7 @@ std::vector<std::string> ControlApi::operations()
         "profiles.list", "profiles.set_active", "profiles.save", "profiles.delete",
         "plugins.list", "plugins.enable", "plugins.disable", "plugins.reload", "plugins.rescan", "plugins.logs",
         "sessions.list", "sessions.start", "sessions.stop", "sessions.replay",
+        "worlds.list", "worlds.get", "worlds.search", "worlds.clear",
     };
 }
 
@@ -190,6 +191,7 @@ ApiReply ControlApi::handle(const std::string& op, const JsonValue& p)
 
         if (op.starts_with("plugins.")) return op_plugins(op, p);
         if (op.starts_with("sessions.")) return op_session(op, p);
+        if (op.starts_with("worlds.")) return op_worlds(op, p);
     } catch (const std::exception& e) {
         spdlog::error("Control API op {} failed: {}", op, e.what());
         return api_error(500, e.what());
@@ -312,6 +314,25 @@ ApiReply ControlApi::op_plugins(const std::string& op, const JsonValue& p)
     }
     w.end_array();
     return api_ok(w.take());
+}
+
+ApiReply ControlApi::op_worlds(const std::string& op, const JsonValue& p)
+{
+    if (!worlds_) return api_error(503, "world inspector is not available");
+    if (op == "worlds.list") return api_ok(worlds_->list_json());
+    if (op == "worlds.get") {
+        auto json = worlds_->get_json(p.str("name"));
+        return json.empty() ? api_error(404, "no such world in this session's history") : api_ok(std::move(json));
+    }
+    if (op == "worlds.search") {
+        if (p.str("query").empty()) return api_error(400, "\"query\" (item name or id) is required");
+        return api_ok(worlds_->search_json(p.str("query")));
+    }
+    if (op == "worlds.clear") {
+        worlds_->clear();
+        return api_ok();
+    }
+    return api_error(404, "unknown operation: " + op);
 }
 
 ApiReply ControlApi::op_session(const std::string& op, const JsonValue& p)

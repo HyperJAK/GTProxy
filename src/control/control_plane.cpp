@@ -5,7 +5,9 @@
 #include "json_dump.hpp"
 #include "json_writer.hpp"
 #include "origin_policy.hpp"
+#include "../item/item_database.hpp"
 #include "../plugin/plugin_manager.hpp"
+#include "../world/world_inspector.hpp"
 
 namespace control {
 ControlPlane::ControlPlane(core::Config& config, network::IConnection& game_client, network::IConnection& upstream)
@@ -18,6 +20,12 @@ ControlPlane::ControlPlane(core::Config& config, network::IConnection& game_clie
     , api_{ config, hub_, flow_, game_client, upstream, recorder_, templates_ }
 {
     const auto cfg = config.get_control_config();
+
+    worlds_ = std::make_unique<world::WorldInspector>(hub_, [](const std::uint32_t id) {
+        const auto* item = item::ItemDatabase::instance().get_item(id);
+        return item && !item->item_name.empty() ? item->item_name : fmt::format("item #{}", id);
+    });
+    api_.set_world_view(worlds_.get());
 
     plugins_ = std::make_unique<plugin::PluginManager>(cfg.plugins_dir, hub_);
     flow_.set_hooks(plugins_.get());
@@ -67,6 +75,7 @@ ControlPlane::~ControlPlane()
 
 void ControlPlane::attach(event::Dispatcher& dispatcher)
 {
+    worlds_->attach(dispatcher);
     const auto add = [&](const event::Type type, const std::string_view peer, const bool connected) {
         handles_.emplace_back(dispatcher, type, dispatcher.append_listener(type, [this, peer, connected](const event::Event&) {
             publish_connection(peer, connected);

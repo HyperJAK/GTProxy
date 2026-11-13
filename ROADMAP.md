@@ -5,6 +5,8 @@ protocol-debugging tool for servers you run; see the scope list in the README.
 
 ## Likely next
 
+* World inspector: apply `SendTileUpdateData` so vending machines stay current, show stock, persist visited worlds to disk, expose worlds to plugins.
+
 * Packet-level search across a recorded session file from the UI.
 * Export the stream as HAR-like JSON / pcap-style hex dump files.
 * Per-plugin persistent key/value storage (`gt.store`).

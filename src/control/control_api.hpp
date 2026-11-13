@@ -7,6 +7,7 @@
 #include "json_value.hpp"
 #include "packet_flow.hpp"
 #include "plugin_admin.hpp"
+#include "world_view.hpp"
 #include "session.hpp"
 #include "template_store.hpp"
 #include "../core/config.hpp"
@@ -34,6 +35,7 @@ public:
     );
 
     void set_plugin_admin(IPluginAdmin* admin) { plugins_ = admin; }
+    void set_world_view(IWorldView* view) { worlds_ = view; }
     void set_replay_hooks(IPacketHooks* hooks) { replay_hooks_ = hooks; }
     void set_ws_client_counter(std::function<std::size_t()> fn) { ws_clients_ = std::move(fn); }
     // Called after the active profile changed (so the core can drop connections etc.).
@@ -50,6 +52,7 @@ private:
     ApiReply op_templates_save(const JsonValue& p);
     ApiReply op_profile_save(const JsonValue& p);
     ApiReply op_plugins(const std::string& op, const JsonValue& p);
+    ApiReply op_worlds(const std::string& op, const JsonValue& p);
     ApiReply op_session(const std::string& op, const JsonValue& p);
     [[nodiscard]] std::string profiles_json() const;
 
@@ -61,6 +64,7 @@ private:
     SessionRecorder& recorder_;
     TemplateStore& templates_;
     IPluginAdmin* plugins_{ nullptr };
+    IWorldView* worlds_{ nullptr };
     IPacketHooks* replay_hooks_{ nullptr };
     std::function<std::size_t()> ws_clients_;
     std::function<void()> on_profile_changed_;

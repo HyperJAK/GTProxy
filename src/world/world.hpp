@@ -82,6 +82,8 @@ public:
         return object_map_;
     }
 
+    [[nodiscard]] const std::string& get_name() const { return name_; }
+
     [[nodiscard]] uint16_t get_version() const
     {
         return version_;
