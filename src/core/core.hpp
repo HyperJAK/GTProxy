@@ -6,6 +6,7 @@
 #include "handlers/forwarding_handler.hpp"
 #include "handlers/world_handler.hpp"
 #include "../command/command_handler.hpp"
+#include "../control/control_plane.hpp"
 #include "../network/client.hpp"
 #include "../network/server.hpp"
 #include "../scripting/lua_engine.hpp"
@@ -35,6 +36,9 @@ private:
     std::unique_ptr<network::Server> server_;
     std::unique_ptr<network::Client> client_;
     std::unique_ptr<WebServer> web_server_;
+
+    // Declared before the handlers so it outlives them (ForwardingHandler keeps a pointer to its flow).
+    std::unique_ptr<control::ControlPlane> control_;
 
     std::unique_ptr<handlers::ConnectionHandler> connection_handler_;
     std::unique_ptr<handlers::ForwardingHandler> forwarding_handler_;

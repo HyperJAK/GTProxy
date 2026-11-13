@@ -1,0 +1,39 @@
+<header class="topbar">
+  <h1>GTProxy <small>protocol debugger</small></h1>
+  <nav role="tablist">
+    @for (t of tabs; track t.id) {
+      <button role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="tab.set(t.id)">
+        {{ t.label }}@if (t.id === 'intercept' && (api.intercept()?.held?.length ?? 0) > 0) { <span class="badge">{{ api.intercept()?.held?.length }}</span> }
+      </button>
+    }
+  </nav>
+  <span class="conn" [class.ok]="api.connected()" [title]="api.url()">
+    {{ api.connected() ? 'connected' : 'reconnecting…' }}
+  </span>
+</header>
+
+<main>
+  @switch (tab()) {
+    @case ('stream') {
+      <app-stream />
+    }
+    @case ('intercept') {
+      <app-intercept />
+    }
+    @case ('inject') {
+      <app-inject />
+    }
+    @case ('worlds') {
+      <app-worlds />
+    }
+    @case ('plugins') {
+      <app-plugins />
+    }
+    @case ('settings') {
+      <app-settings />
+    }
+    @case ('dashboard') {
+      <app-dashboard />
+    }
+  }
+</main>

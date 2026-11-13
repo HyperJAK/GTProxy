@@ -21,3 +21,14 @@ CMakeSettings.json
 
 # macOS system files
 .DS_Store
+
+# Runtime files
+config.json
+proxy.log*
+sessions/
+templates.json
+plugins/state.json
+/ui-dist
+node_modules/
+/web-ui/dist
+/web-ui/.angular

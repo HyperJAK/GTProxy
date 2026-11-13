@@ -1,0 +1,47 @@
+@if (s(); as st) {
+  <div class="grid">
+    <section class="card">
+      <h2>Game client</h2>
+      <p class="big" [class.ok]="st.game_client.connected">{{ st.game_client.connected ? 'connected' : 'not connected' }}</p>
+      <p class="muted mono">{{ st.game_client.address || '—' }}</p>
+      <p>latency <strong>{{ st.game_client.connected ? st.game_client.rtt_ms + ' ms' : '—' }}</strong></p>
+    </section>
+    <section class="card">
+      <h2>Upstream server</h2>
+      <p class="big" [class.ok]="st.upstream.connected">{{ st.upstream.connected ? 'connected' : 'not connected' }}</p>
+      <p class="muted mono">{{ st.upstream.address || '—' }}</p>
+      <p>latency <strong>{{ st.upstream.connected ? st.upstream.rtt_ms + ' ms' : '—' }}</strong></p>
+    </section>
+    <section class="card">
+      <h2>Traffic</h2>
+      <table>
+        <tr><th></th><th>packets</th><th>bytes</th><th>rate</th></tr>
+        <tr><td>← to client</td><td>{{ st.counters.client_bound_packets }}</td><td>{{ kb(st.counters.client_bound_bytes) }}</td><td>{{ api.statusRate().in.toFixed(1) }}/s</td></tr>
+        <tr><td>→ to server</td><td>{{ st.counters.server_bound_packets }}</td><td>{{ kb(st.counters.server_bound_bytes) }}</td><td>{{ api.statusRate().out.toFixed(1) }}/s</td></tr>
+      </table>
+      <p class="muted">dropped {{ st.counters.dropped }} · edited {{ st.counters.edited }} · injected {{ st.counters.injected }} · consumed {{ st.counters.consumed }}@if (st.counters.write_failures) { · <span class="bad">write failures {{ st.counters.write_failures }}</span> }</p>
+    </section>
+    <section class="card">
+      <h2>Proxy</h2>
+      <dl>
+        <dt>version</dt><dd>{{ st.version }}</dd>
+        <dt>uptime</dt><dd>{{ uptime() }}</dd>
+        <dt>profile</dt><dd>{{ st.profile }}</dd>
+        <dt>intercept</dt><dd>{{ st.intercept.enabled ? 'on' : 'off' }} ({{ st.intercept.held }} held)</dd>
+        <dt>recording</dt><dd>{{ st.recording.active ? st.recording.name + ' (' + st.recording.events + ' events)' : 'off' }}</dd>
+        <dt>plugins</dt><dd>{{ st.plugins.enabled }}/{{ st.plugins.total }} enabled@if (st.plugins.errors) { · <span class="bad">{{ st.plugins.errors }} errors</span> }</dd>
+        <dt>UI clients</dt><dd>{{ st.ws_clients }}</dd>
+      </dl>
+    </section>
+    <section class="card wide">
+      <h2>Connection log</h2>
+      @for (c of api.connections(); track $index) {
+        <div class="mono row"><span class="muted">{{ time(c.ts) }}</span> {{ c.peer }} <strong [class.ok]="c.state === 'connected'" [class.bad]="c.state !== 'connected'">{{ c.state }}</strong></div>
+      } @empty {
+        <p class="muted">No connection events yet.</p>
+      }
+    </section>
+  </div>
+} @else {
+  <p class="muted pad">{{ api.connected() ? 'Waiting for the first status update…' : 'Not connected to the proxy control plane (' + api.url() + ').' }}</p>
+}

@@ -157,9 +157,14 @@ struct TypedPacketEvent : Event {
 };
 
 
+// eventpp 0.1.x looks for the camelCase names below. The snake_case
+// aliases are kept for newer eventpp releases that may rename the hooks.
 struct EventPolicies {
-    static Type get_event(const Event& e) { return e.type; }
-    static bool can_continue_invoking(const Event& e) { return !e.canceled; }
+    static Type getEvent(const Event& e) { return e.type; }
+    static bool canContinueInvoking(const Event& e) { return !e.canceled; }
+
+    static Type get_event(const Event& e) { return getEvent(e); }
+    static bool can_continue_invoking(const Event& e) { return canContinueInvoking(e); }
 };
 
 using BaseDispatcher = eventpp::EventDispatcher<

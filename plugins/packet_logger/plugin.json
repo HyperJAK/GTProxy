@@ -1,0 +1,5 @@
+{
+  "name": "Packet logger",
+  "version": "1.0.0",
+  "description": "Example: writes a one-line summary of every packet to this plugin's log, plus totals on disconnect."
+}

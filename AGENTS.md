@@ -190,6 +190,15 @@ When creating new Lua bindings or modifying existing ones:
 2.  **Document API:** Update [scripts/AGENTS.md](scripts/AGENTS.md) with the new Lua API.
 3.  **Example Usage:** Include example usage in the test script demonstrating common use cases.
 
+## Control Plane, Plugins and UI (fork additions)
+
+- `src/control/`: packet pipeline (`PacketFlow`), codec, REST/WebSocket servers, API ops. Read [ARCHITECTURE.md](ARCHITECTURE.md) first. Everything that touches ENet runs on the main thread; other threads go through `MainThreadQueue`.
+- `src/plugin/`: sandboxed Lua plugins (one state per plugin). Docs in [docs/PLUGINS.md](docs/PLUGINS.md). Every call into Lua must be protected and must not keep `sol` result objects alive past `lua_close`.
+- `web-ui/`: Angular app. `npm run build`, `npx ng test --watch=false`.
+- Tests link `GTProxyLib` (all sources except `main.cpp`). Tests must not need a real client or server; use `tests/control/fixtures.hpp` and `FakeConnection`, or the ENet loopback in `tests/control/test_enet_loopback.cpp`.
+- No Conan access? Use `scripts/dev/linux-deps.sh` and `-DGTPROXY_USE_CONAN=OFF`.
+- Scope: local protocol tool for servers the user controls. Do not add features aimed at official servers, evasion/spoofing, credential capture, remote control, or mass actions; put ideas in `ROADMAP.md`.
+
 ## Dependencies
 
 Managed by Conan 2.0+:
