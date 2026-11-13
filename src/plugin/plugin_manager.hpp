@@ -1,32 +1,44 @@
 #pragma once
 #include <filesystem>
+#include <memory>
 #include <string_view>
+#include <vector>
 
-#include "../control/event_hub.hpp"
-#include "../control/packet_flow.hpp"
-#include "../control/plugin_admin.hpp"
+#include "plugin.hpp"
 
 namespace plugin {
-// Placeholder until the plugin runtime lands (phase 5): loads nothing.
+// Discovers plugins in <dir>/<name>/main.lua, tracks which are enabled
+// (<dir>/state.json) and runs their hooks in alphabetical order.
+// New plugins start DISABLED: nothing runs until you switch it on.
 class PluginManager final : public control::IPacketHooks, public control::IPluginAdmin {
 public:
-    PluginManager(std::filesystem::path dir, control::EventHub& hub);
+    PluginManager(std::filesystem::path dir, control::EventHub& hub, Limits limits = {});
 
-    control::HookAction on_packet(control::PacketFlow&, event::Direction, std::uint64_t, const control::DecodedPacket&, std::vector<std::byte>&) override
-    {
-        return control::HookAction::Pass;
-    }
-    void on_connection(control::PacketFlow&, std::string_view, bool) { }
+    control::HookAction on_packet(control::PacketFlow& flow, event::Direction dir, std::uint64_t id,
+        const control::DecodedPacket& decoded, std::vector<std::byte>& bytes) override;
+    void on_connection(control::PacketFlow& flow, std::string_view peer, bool connected);
     void poll() { }
 
-    [[nodiscard]] std::vector<control::PluginInfo> list() const override { return {}; }
-    std::string set_enabled(const std::string&, bool) override { return "plugin runtime not available"; }
-    std::string reload(const std::string&) override { return "plugin runtime not available"; }
-    std::string rescan() override { return {}; }
-    [[nodiscard]] std::vector<control::PluginLogLine> logs(const std::string&, std::size_t) const override { return {}; }
+    [[nodiscard]] std::vector<control::PluginInfo> list() const override;
+    std::string set_enabled(const std::string& name, bool enabled) override;
+    std::string reload(const std::string& name) override;
+    std::string rescan() override;
+    [[nodiscard]] std::vector<control::PluginLogLine> logs(const std::string& name, std::size_t limit) const override;
 
 private:
+    struct Entry {
+        std::unique_ptr<Plugin> plugin;
+        bool enabled{ false };
+    };
+    Entry* find(const std::string& name);
+    [[nodiscard]] const Entry* find(const std::string& name) const;
+    void save_state() const;
+    void publish_state();
+    void enforce_trips();
+
     std::filesystem::path dir_;
     control::EventHub& hub_;
+    Limits limits_;
+    std::vector<Entry> entries_; // sorted by id
 };
 }

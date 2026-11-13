@@ -10,7 +10,8 @@ add_executable(GTProxy_tests
     control/test_api.cpp
     control/test_integration.cpp
     control/test_enet_loopback.cpp
-    test_config.cpp)
+    test_config.cpp
+    test_plugins.cpp)
 
 target_include_directories(GTProxy_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
@@ -20,3 +21,5 @@ target_link_libraries(GTProxy_tests PRIVATE GTProxyLib GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(GTProxy_tests DISCOVERY_TIMEOUT 30)
+
+target_compile_definitions(GTProxy_tests PRIVATE GTPROXY_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

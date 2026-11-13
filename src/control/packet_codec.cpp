@@ -151,14 +151,17 @@ DecodedPacket decode_text(std::uint32_t msg_type, std::span<const std::byte> bod
     std::string name;
     for (const auto line : split(text, '\n')) {
         if (line.empty()) continue;
-        const auto parts = split(line, '|');
+        auto parts = split(line, '|');
+        // "|key|value" lines (leading pipe) are keyed by their first field.
+        const bool leading_pipe = parts[0].empty() && parts.size() >= 2;
+        if (leading_pipe) parts.erase(parts.begin());
         w.begin_object().field("key", parts[0]);
+        if (leading_pipe) w.field("leading_pipe", true);
         w.key("values").begin_array();
         for (std::size_t i = 1; i < parts.size(); ++i) w.value(parts[i]);
         w.end_array().end_object();
         if (name.empty()) {
             name = parts.size() > 1 && parts[0] == "action" ? fmt::format("action|{}", parts[1]) : std::string{ parts[0] };
-            if (name.empty() && parts.size() > 1) name = std::string{ parts[1] };
         }
     }
     w.end_array().end_object();
