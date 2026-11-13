@@ -5,13 +5,16 @@
 #include "../../network/client.hpp"
 #include "../../network/server.hpp"
 
+namespace control { class PacketFlow; }
+
 namespace core::handlers {
 class ForwardingHandler {
 public:
     ForwardingHandler(
         event::Dispatcher& dispatcher,
         network::Client& client,
-        network::Server& server
+        network::Server& server,
+        control::PacketFlow* flow = nullptr
     );
 
 private:
@@ -21,6 +24,7 @@ private:
     event::Dispatcher& dispatcher_;
     network::Client& client_;
     network::Server& server_;
+    control::PacketFlow* flow_; // optional control-plane pipeline (null = plain forwarding)
 
     std::vector<event::ScopedHandle> handles_;
 };

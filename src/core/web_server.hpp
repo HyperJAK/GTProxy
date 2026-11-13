@@ -21,6 +21,7 @@ public:
 
 private:
     void setup_server();
+    [[nodiscard]] std::string resolve_upstream(const std::string& host) const;
     void listen_internal();
 
     void on_client_connect(const event::Event& e);

@@ -25,7 +25,7 @@ inline bool is_valid_ip_address(const std::string& address)
                 return false;
             }
 
-            return value > 0 && value <= 255;
+            return true; // 0 is a valid octet (e.g. 10.0.0.5)
         }
         catch (const std::exception&) {
             return false;

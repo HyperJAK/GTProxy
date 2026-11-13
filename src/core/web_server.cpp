@@ -4,6 +4,9 @@
 #include <magic_enum/magic_enum.hpp>
 #include <spdlog/spdlog.h>
 
+#include <enet/enet.h>
+
+#include "../utils/network.hpp"
 #include "../utils/text_parse.hpp"
 // ReSharper disable once CppUnusedIncludeDirective
 #include "../utils/formatter/text_parse_formatter.hpp"
@@ -19,7 +22,9 @@ WebServer::WebServer(
     , dispatcher_{ dispatcher }
     , client_{ client }
     , server_{ server }
-    , dns_resolver_{ network::create_dns_provider(config_.get_client_config().dns_server) }
+    , dns_resolver_{ network::create_dns_provider(
+        config_.get_client_config().dns_server == "system" ? "google" : config_.get_client_config().dns_server
+    ) }
     , https_server_{ "./resources/cert.pem", "./resources/key.pem" }
     , pending_port_{ 65535 }
 {
@@ -41,6 +46,29 @@ WebServer::~WebServer()
 {
     https_server_.stop();
     server_thread_.join();
+}
+
+std::string WebServer::resolve_upstream(const std::string& host) const
+{
+    if (host == "localhost") {
+        return "127.0.0.1";
+    }
+
+    if (utils::network::classify_host(host) != utils::network::HostType::Hostname) {
+        return host;
+    }
+
+    if (config_.get_client_config().dns_server == "system") {
+        ENetAddress address{};
+        if (enet_address_set_host(&address, host.c_str()) != 0) {
+            spdlog::error("System DNS could not resolve {}", host);
+            return {};
+        }
+
+        return utils::network::format_ip_address(address.host);
+    }
+
+    return dns_resolver_.resolve_ip(host);
 }
 
 void WebServer::setup_server()
@@ -93,8 +121,34 @@ void WebServer::listen_internal()
             spdlog::info("\t{}", req.body);
         }
 
-        std::string server_address = config_.get_server_config().address;
-        std::string resolved_ip = dns_resolver_.resolve_ip(server_address);
+        const auto profile{ config_.get_active_profile() };
+        if (!profile) {
+            res.status = 500;
+            res.set_content("No active server profile", "text/plain");
+            return true;
+        }
+
+        if (profile->direct) {
+            // Direct profile: do not fetch server_data.php upstream. Point the
+            // client at this proxy and remember the ENet endpoint to connect to.
+            // NOTE: this body is the minimum needed to redirect; it is untested
+            // against a real client (see ARCHITECTURE.md, Assumptions).
+            pending_address_ = profile->enet_address;
+            pending_port_ = static_cast<uint16_t>(profile->enet_port);
+            spdlog::info("Profile \"{}\" is direct: ENet target {}:{}", profile->name, pending_address_, pending_port_);
+
+            res.set_content(
+                fmt::format(
+                    "server|127.0.0.1\nport|{}\ntype|1\ntype2|1\n",
+                    config_.get_server_config().port
+                ),
+                "text/html"
+            );
+            return true;
+        }
+
+        const std::string server_address{ profile->address };
+        const std::string resolved_ip{ resolve_upstream(server_address) };
 
         if (resolved_ip.empty()) {
             res.status = 500;
@@ -102,8 +156,10 @@ void WebServer::listen_internal()
             return true;
         }
 
-        httplib::Client cli{ fmt::format("https://{}", resolved_ip) };
-        cli.enable_server_certificate_verification(false);
+        httplib::Client cli{ fmt::format("{}://{}:{}", profile->tls ? "https" : "http", resolved_ip, profile->port) };
+        cli.enable_server_certificate_verification(false); // private servers commonly use self-signed certs
+        cli.set_connection_timeout(5);
+        cli.set_read_timeout(10);
 
         httplib::Headers headers{
             { "User-Agent", req.get_header_value("User-Agent") },

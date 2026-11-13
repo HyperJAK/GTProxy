@@ -74,6 +74,8 @@ void Server::on_receive(ENetPeer* peer, const std::span<const std::byte> data)
         return;
     }
 
+    const WireTapGuard tap_guard{ tap_, data };
+
     const auto decoded{ packet::PacketDecoder::decode(data, config_.get_log_config(), "ServerBound") };
     if (!decoded.has_value()) {
         const event::RawPacketEvent evt{ event::Type::ServerBoundPacket, data };
@@ -130,6 +132,10 @@ bool Server::write(std::span<const std::byte> data, const int channel) const
         return false;
     }
 
+    if (tap_) {
+        tap_->on_write(data, channel);
+    }
+
     return true;
 }
 
@@ -158,6 +164,20 @@ void Server::disconnect_now()
 bool Server::is_connected() const
 {
     return peer_ && peer_->state == ENET_PEER_STATE_CONNECTED;
+}
+
+std::uint32_t Server::round_trip_ms() const
+{
+    return is_connected() ? peer_->roundTripTime : 0;
+}
+
+std::string Server::peer_description() const
+{
+    if (!peer_) {
+        return {};
+    }
+
+    return fmt::format("{}:{}", utils::network::format_ip_address(peer_->address.host), peer_->address.port);
 }
 
 void Server::flush() const
