@@ -1,8 +1,10 @@
-import { Component, ElementRef, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { ApiService } from '../core/api.service';
 import { EMPTY_FILTER, PacketFilter, matchesFilter, normalizeHex } from '../core/filter';
 import { formatTime, hexDump } from '../core/hexdump';
 import { Dir, PacketRow } from '../core/models';
+import { specFromRow } from '../core/spec';
+import { Workbench } from '../core/workbench.service';
 
 const KINDS = ['text', 'variant', 'game', 'hello', 'raw'];
 
@@ -13,6 +15,8 @@ const KINDS = ['text', 'variant', 'game', 'hello', 'raw'];
 })
 export class StreamComponent {
   protected readonly api = inject(ApiService);
+  private readonly bench = inject(Workbench);
+  private readonly injector = inject(Injector);
   protected readonly kinds = KINDS;
   protected readonly dir = signal<PacketFilter['dir']>('all');
   protected readonly activeKinds = signal<ReadonlySet<string>>(new Set());
@@ -53,10 +57,13 @@ export class StreamComponent {
     effect(() => {
       this.visible();
       if (!this.follow()) return;
-      afterNextRender(() => {
-        const el = this.listEl()?.nativeElement;
-        if (el) el.scrollTop = el.scrollHeight;
-      });
+      afterNextRender(
+        () => {
+          const el = this.listEl()?.nativeElement;
+          if (el) el.scrollTop = el.scrollHeight;
+        },
+        { injector: this.injector },
+      );
     });
   }
 
@@ -68,6 +75,10 @@ export class StreamComponent {
 
   protected arrow(dir: Dir): string {
     return dir === 'server_bound' ? '→ server' : '← client';
+  }
+
+  protected resend(row: PacketRow): void {
+    this.bench.sendToInjector(specFromRow(row), row.dir);
   }
 
   protected async copyHex(row: PacketRow): Promise<void> {

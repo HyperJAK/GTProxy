@@ -10,3 +10,4 @@ nav button.active { color: var(--fg); border-bottom-color: var(--accent); }
 .conn.ok { color: var(--good); }
 .conn::before { content: '● '; }
 main { flex: 1; min-height: 0; overflow: auto; }
+.badge { background: var(--warn); color: #000; border-radius: 99px; padding: 0 .45rem; font-size: .72rem; margin-left: .35rem; }

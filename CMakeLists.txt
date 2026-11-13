@@ -23,3 +23,11 @@ add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(tests)
+
+# Dev helper that plays both ends of a session against a running proxy.
+option(GTPROXY_BUILD_TOOLS "Build developer tools (fake peers)" ON)
+if (GTPROXY_BUILD_TOOLS)
+    add_executable(GTProxy_fake_peers tools/fake_peers.cpp)
+    target_link_libraries(GTProxy_fake_peers PRIVATE GTProxyLib)
+    target_include_directories(GTProxy_fake_peers PRIVATE ${CMAKE_SOURCE_DIR}/src)
+endif ()

@@ -68,6 +68,7 @@
         <dt>length</dt><dd>{{ p.len }} bytes</dd>
       </dl>
       @if (p.originalHex) { <p class="warn">Edited in flight — hex below is what was forwarded.</p> }
+      <p><button class="btn" (click)="resend(p)">Edit &amp; send in Injector</button></p>
       <h3>Decoded</h3>
       <pre>{{ selectedJson() }}</pre>
       <h3>Hex <button class="btn" (click)="copyHex(p)">copy</button></h3>

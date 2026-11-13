@@ -1,0 +1,64 @@
+<div class="kindbar" role="group" aria-label="Packet type">
+  @for (k of kinds; track k) {
+    <button class="btn" [class.primary]="spec().kind === k" (click)="spec().kind === k || setKind(k)">{{ k }}</button>
+  }
+</div>
+
+@switch (spec().kind) {
+  @case ('raw') {
+    <label>Raw bytes (hex)
+      <textarea class="mono" rows="6" spellcheck="false" [value]="$any(spec()).hex" (input)="patch({ hex: $any($event.target).value })"></textarea>
+    </label>
+  }
+  @case ('text') {
+    <label class="inline">Message type
+      <input type="number" [value]="$any(spec()).msg_type" (input)="patch({ msg_type: +$any($event.target).value })" />
+      <span class="hint">2 = generic text, 3 = game message</span>
+    </label>
+    <label>Text (key|value lines)
+      <textarea class="mono" rows="6" spellcheck="false" [value]="$any(spec()).text" (input)="patch({ text: $any($event.target).value })"></textarea>
+    </label>
+  }
+  @case ('variant') {
+    <div class="header-grid">
+      @for (f of ['net_id', 'item_net_id', 'flags', 'float_var', 'int_data']; track f) {
+        <label>{{ f }}<input type="number" [value]="$any(spec()).header[f]" (input)="setHeader(f, $any($event.target).value)" /></label>
+      }
+    </div>
+    <table class="values">
+      <thead><tr><th>#</th><th>type</th><th>value</th><th></th></tr></thead>
+      @for (v of $any(spec()).values; track $index; let i = $index) {
+        <tr>
+          <td>{{ i }}</td>
+          <td>
+            <select [value]="v.type" (change)="setValue(i, { type: $any($event.target).value, value: '' })">
+              @for (t of variantTypes; track t) { <option [value]="t" [selected]="t === v.type">{{ t }}</option> }
+            </select>
+          </td>
+          <td><input class="mono wide" [value]="variantToInput(v)" [placeholder]="v.type.startsWith('vec') ? 'x, y' + (v.type === 'vec3' ? ', z' : '') : ''" (input)="setValueInput(i, $any($event.target).value)" /></td>
+          <td><button class="btn" (click)="removeValue(i)" aria-label="Remove value">✕</button></td>
+        </tr>
+      }
+    </table>
+    <button class="btn" (click)="addValue()">+ value</button>
+  }
+  @case ('game') {
+    <div class="header-grid">
+      @for (f of headerFields; track f) {
+        <label>{{ f }}<input type="number" step="any" [value]="$any(spec()).header[f]" (input)="setHeader(f, $any($event.target).value)" /></label>
+      }
+    </div>
+    <label>Extra data (hex)
+      <textarea class="mono" rows="3" spellcheck="false" [value]="$any(spec()).extra_hex" (input)="patch({ extra_hex: $any($event.target).value })"></textarea>
+    </label>
+  }
+}
+
+<div class="preview" [class.err]="encodeError()">
+  @if (encodeError()) {
+    <strong>Cannot encode:</strong> {{ encodeError() }}
+  } @else {
+    <span class="hint">encoded ({{ encodedHex().length / 2 }} bytes)</span>
+    <code>{{ encodedHex() }}</code>
+  }
+</div>

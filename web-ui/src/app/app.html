@@ -3,7 +3,7 @@
   <nav role="tablist">
     @for (t of tabs; track t.id) {
       <button role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="tab.set(t.id)">
-        {{ t.label }}
+        {{ t.label }}@if (t.id === 'intercept' && (api.intercept()?.held?.length ?? 0) > 0) { <span class="badge">{{ api.intercept()?.held?.length }}</span> }
       </button>
     }
   </nav>
@@ -16,6 +16,12 @@
   @switch (tab()) {
     @case ('stream') {
       <app-stream />
+    }
+    @case ('intercept') {
+      <app-intercept />
+    }
+    @case ('inject') {
+      <app-inject />
     }
     @case ('dashboard') {
       <app-dashboard />
