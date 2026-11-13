@@ -45,7 +45,7 @@ try {
             GTPROXY_VERSION_MINOR,
             GTPROXY_VERSION_PATCH,
 #ifdef GTPROXY_BUILD_VERSION
-            fmt::format!("-{}", GTPROXY_BUILD_VERSION)
+            fmt::format("-{}", GTPROXY_BUILD_VERSION)
 #else
             ""
 #endif
