@@ -1,0 +1,24 @@
+<header class="topbar">
+  <h1>GTProxy <small>protocol debugger</small></h1>
+  <nav role="tablist">
+    @for (t of tabs; track t.id) {
+      <button role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="tab.set(t.id)">
+        {{ t.label }}
+      </button>
+    }
+  </nav>
+  <span class="conn" [class.ok]="api.connected()" [title]="api.url()">
+    {{ api.connected() ? 'connected' : 'reconnecting…' }}
+  </span>
+</header>
+
+<main>
+  @switch (tab()) {
+    @case ('stream') {
+      <app-stream />
+    }
+    @case ('dashboard') {
+      <app-dashboard />
+    }
+  }
+</main>

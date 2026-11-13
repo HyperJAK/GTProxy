@@ -30,3 +30,5 @@ templates.json
 plugins/state.json
 /ui-dist
 node_modules/
+/web-ui/dist
+/web-ui/.angular
