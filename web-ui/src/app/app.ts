@@ -4,11 +4,12 @@ import { DashboardComponent } from './dashboard/dashboard';
 import { InjectComponent } from './inject/inject';
 import { InterceptComponent } from './intercept/intercept';
 import { PluginsComponent } from './plugins/plugins';
+import { SettingsComponent } from './settings/settings';
 import { StreamComponent } from './stream/stream';
 import { Tab, Workbench } from './core/workbench.service';
 
 @Component({
-  imports: [StreamComponent, DashboardComponent, InterceptComponent, InjectComponent, PluginsComponent],
+  imports: [StreamComponent, DashboardComponent, InterceptComponent, InjectComponent, PluginsComponent, SettingsComponent],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -23,6 +24,7 @@ export class App implements OnInit {
     { id: 'inject', label: 'Inject' },
     { id: 'plugins', label: 'Plugins' },
     { id: 'dashboard', label: 'Dashboard' },
+    { id: 'settings', label: 'Profiles & sessions' },
   ];
 
   ngOnInit(): void {

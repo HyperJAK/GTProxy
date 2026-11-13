@@ -111,6 +111,24 @@ add_custom_command(
     "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
     COMMENT "Copying ${CMAKE_SOURCE_DIR}/resources to $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources.")
 
+# Example plugins (disabled until switched on in the UI) and, if it has been
+# built (cd web-ui && npm run build), the Angular UI.
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/plugins"
+    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins"
+    COMMENT "Copying example plugins.")
+
+if (EXISTS "${CMAKE_SOURCE_DIR}/web-ui/dist/web-ui/browser")
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/web-ui/dist/web-ui/browser"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/ui"
+        COMMENT "Copying built Angular UI.")
+endif ()
+
 file(GLOB SCRIPT_FILES "${CMAKE_SOURCE_DIR}/scripts/*.lua")
 file(GLOB_RECURSE SCRIPT_SUBDIR_FILES "${CMAKE_SOURCE_DIR}/scripts/**/*.lua")
 

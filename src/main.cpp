@@ -21,9 +21,17 @@ int main()
 try {
         core::Logger logger{};
 
+        const auto console_sink{ core::Logger::create_console_sink() };
+        const auto file_sink{ core::Logger::create_file_sink() };
+        // Pattern is set per sink: a global spdlog::set_pattern() would also
+        // overwrite the JSON formatter of the structured log sink.
+        console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%t] [%^%l%$] %v");
+        file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%t] [%^%l%$] %v");
+
         std::vector<spdlog::sink_ptr> sinks{
-            core::Logger::create_console_sink(),
-            core::Logger::create_file_sink()
+            console_sink,
+            file_sink,
+            core::Logger::create_json_sink()
         };
 
         logger.set_logger(std::make_shared<spdlog::logger>("GTProxy", sinks.begin(), sinks.end()));
@@ -31,7 +39,6 @@ try {
 
         spdlog::register_logger(logger.get_logger());
         spdlog::set_default_logger(logger.get_logger());
-        spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%t] [%^%l%$] %v");
     }
     catch (const spdlog::spdlog_ex& ex) {
         spdlog::error("Log initialization failed: {}", ex.what());

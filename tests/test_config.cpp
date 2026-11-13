@@ -52,3 +52,34 @@ TEST(Network, IpClassificationAcceptsZeroOctets)
     EXPECT_FALSE(utils::network::is_valid_ip_address("example.com"));
     EXPECT_FALSE(utils::network::is_valid_ip_address("1.2.3.256"));
 }
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/ostream_sink.h>
+#include <sstream>
+#include "control/json_value.hpp"
+#include "core/json_log_formatter.hpp"
+
+TEST(StructuredLogging, EmitsOneValidJsonObjectPerRecord)
+{
+    std::ostringstream out;
+    auto sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(out);
+    sink->set_formatter(std::make_unique<core::JsonLogFormatter>());
+    spdlog::logger logger{ "test", sink };
+    logger.info("hello \"quoted\"\nnewline {}", 42);
+    logger.error("second");
+
+    std::istringstream in{ out.str() };
+    std::string line;
+    std::vector<control::JsonValue> records;
+    while (std::getline(in, line)) {
+        const auto v = control::JsonValue::parse(line);
+        ASSERT_TRUE(v) << line;
+        records.push_back(*v);
+    }
+    ASSERT_EQ(records.size(), 2u);
+    EXPECT_EQ(records[0].str("level"), "info");
+    EXPECT_EQ(records[0].str("msg"), "hello \"quoted\"\nnewline 42");
+    EXPECT_EQ(records[0].str("logger"), "test");
+    EXPECT_EQ(records[1].str("level"), "error");
+    EXPECT_EQ(records[0].str("ts").size(), 24u); // 2026-11-13T07:30:55.123Z
+}

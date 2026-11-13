@@ -1,0 +1,75 @@
+@if (message(); as m) { <p class="msg" [class.bad]="!m.ok" role="status">{{ m.text }}</p> }
+
+<div class="grid">
+  <section class="card">
+    <h2>Server profiles</h2>
+    <p class="muted">Where the proxy sends traffic. Point these at servers you run. <strong>direct</strong> skips the upstream <code>server_data.php</code> request and connects ENet straight to the given address.</p>
+    <table>
+      @for (p of profiles(); track p.name) {
+        <tr>
+          <td><input type="radio" name="active" [checked]="p.name === active()" (change)="activate(p.name)" [attr.aria-label]="'Use profile ' + p.name" /></td>
+          <td><button class="link" (click)="edit(p)">{{ p.name }}</button></td>
+          <td class="mono muted">{{ p.direct ? 'direct ' + p.enet_address + ':' + p.enet_port : (p.tls ? 'https' : 'http') + '://' + p.address + ':' + p.port }}</td>
+          <td><button class="btn" [disabled]="p.name === active()" (click)="deleteProfile(p.name)" [attr.aria-label]="'Delete profile ' + p.name">✕</button></td>
+        </tr>
+      }
+    </table>
+    <h3>Edit / add profile</h3>
+    <div class="form">
+      <label>name <input [value]="draft().name" (input)="patch({ name: $any($event.target).value })" /></label>
+      <label class="check"><input type="checkbox" [checked]="draft().direct" (change)="patch({ direct: $any($event.target).checked })" /> direct (no server_data.php)</label>
+      @if (draft().direct) {
+        <label>ENet address <input [value]="draft().enet_address" (input)="patch({ enet_address: $any($event.target).value })" /></label>
+        <label>ENet port <input type="number" [value]="draft().enet_port" (input)="patch({ enet_port: +$any($event.target).value })" /></label>
+      } @else {
+        <label>HTTP(S) host <input [value]="draft().address" (input)="patch({ address: $any($event.target).value })" /></label>
+        <label>port <input type="number" [value]="draft().port" (input)="patch({ port: +$any($event.target).value })" /></label>
+        <label class="check"><input type="checkbox" [checked]="draft().tls" (change)="patch({ tls: $any($event.target).checked })" /> TLS</label>
+      }
+      <button class="btn primary" (click)="saveProfile()">Save profile</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Session recording</h2>
+    <p class="muted">Records every packet and verdict to <code>sessions/&lt;name&gt;.jsonl</code>. Replay feeds the recorded wire packets through the current plugins offline — nothing is sent to any peer.</p>
+    @if (api.status()?.recording?.active) {
+      <p>Recording <strong>{{ api.status()?.recording?.name }}</strong> ({{ api.status()?.recording?.events }} events)
+        <button class="btn danger" (click)="stopRecording()">Stop</button></p>
+    } @else {
+      <div class="row">
+        <input placeholder="session name (optional)" [value]="recordName()" (input)="recordName.set($any($event.target).value)" />
+        <button class="btn primary" (click)="startRecording()">Start recording</button>
+      </div>
+    }
+    <h3>Recorded sessions</h3>
+    <ul>
+      @for (s of sessions(); track s.name) {
+        <li><span class="mono">{{ s.name }}</span> <span class="muted">{{ (s.bytes / 1024).toFixed(1) }} KiB</span>
+          <button class="btn" (click)="replaySession(s.name)">Replay offline</button></li>
+      } @empty { <li class="muted">No sessions yet.</li> }
+    </ul>
+    @if (replay(); as r) {
+      <div class="result">
+        <strong>{{ r.name }}</strong>: {{ r.total }} packets replayed ·
+        <span [class.warn]="r.changed > 0">{{ r.changed }} changed</span> ·
+        <span [class.warn]="r.dropped > 0">{{ r.dropped }} dropped</span>
+        @if (r.skipped_lines) { · {{ r.skipped_lines }} unreadable lines skipped }
+        @for (p of r.packets; track p.id) {
+          @if (p.changed || p.dropped) {
+            <div class="mono small">#{{ p.id }} {{ p.dir }}: {{ p.dropped ? 'dropped' : 'changed' }}</div>
+          }
+        }
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2>UI connection</h2>
+    <div class="row">
+      <input class="mono wide" [value]="wsUrl()" (input)="wsUrl.set($any($event.target).value)" aria-label="WebSocket URL" />
+      <button class="btn" (click)="saveUrl()">Reconnect</button>
+    </div>
+    <p class="muted">The control plane only listens on this machine (127.0.0.1) and rejects other origins.</p>
+  </section>
+</div>
