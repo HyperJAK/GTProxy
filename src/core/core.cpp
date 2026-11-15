@@ -31,8 +31,13 @@ Core::Core()
 
     packet::register_all_packets();
 
+    control_ = std::make_unique<control::ControlPlane>(config_, *server_, *client_);
+    server_->set_wire_tap(control_->flow().server_tap());
+    client_->set_wire_tap(control_->flow().client_tap());
+    control_->attach(dispatcher_);
+
     connection_handler_ = std::make_unique<handlers::ConnectionHandler>(dispatcher_, *client_, *server_, config_);
-    forwarding_handler_ = std::make_unique<handlers::ForwardingHandler>(dispatcher_, *client_, *server_);
+    forwarding_handler_ = std::make_unique<handlers::ForwardingHandler>(dispatcher_, *client_, *server_, &control_->flow());
     world_handler_ = std::make_unique<handlers::WorldHandler>(dispatcher_);
     command_handler_ = std::make_unique<command::CommandHandler>(config_, dispatcher_, scheduler_, *server_, *client_);
 
@@ -84,6 +89,7 @@ void Core::run() const
         server_->process();
         client_->process();
         script_scheduler_->update(elapsed);
+        control_->poll();
 
         if (sleep_duration > std::chrono::microseconds::zero()) {
             std::this_thread::sleep_for(sleep_duration);

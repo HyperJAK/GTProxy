@@ -1,0 +1,5 @@
+{
+  "name": "Auto responder",
+  "version": "1.0.0",
+  "description": "Example: answers chat commands such as !ping typed in the game client, without involving the server."
+}

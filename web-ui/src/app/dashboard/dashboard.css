@@ -1,0 +1,10 @@
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1rem; padding: 1rem; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: .9rem 1rem; }
+.card.wide { grid-column: 1 / -1; }
+h2 { margin: 0 0 .5rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.big { font-size: 1.3rem; margin: 0; color: var(--bad); } .big.ok, .ok { color: var(--good); } .bad { color: var(--bad); }
+.muted { color: var(--muted); } .pad { padding: 1.5rem; }
+p { margin: .25rem 0; }
+table { width: 100%; border-collapse: collapse; } th { text-align: left; color: var(--muted); font-weight: 500; } td, th { padding: .15rem .3rem; }
+dl { display: grid; grid-template-columns: 6rem 1fr; gap: .15rem; margin: 0; } dt { color: var(--muted); } dd { margin: 0; }
+.row { padding: .1rem 0; }

@@ -1,14 +1,18 @@
 #include "forwarding_handler.hpp"
 
+#include "../../control/packet_flow.hpp"
+
 namespace core::handlers {
 ForwardingHandler::ForwardingHandler(
     event::Dispatcher& dispatcher,
     network::Client& client,
-    network::Server& server
+    network::Server& server,
+    control::PacketFlow* flow
 )
     : dispatcher_{ dispatcher }
     , client_{ client }
     , server_{ server }
+    , flow_{ flow }
 {
     setup_raw_packet_handlers();
 }
@@ -24,6 +28,11 @@ void ForwardingHandler::setup_raw_packet_handlers()
                 return;
             }
 
+            if (flow_) {
+                flow_->forward(event::Direction::ClientBound, raw_packet->data);
+                return;
+            }
+
             std::ignore = server_.write(raw_packet->data);
         })
     );
@@ -34,6 +43,11 @@ void ForwardingHandler::setup_raw_packet_handlers()
         dispatcher_.append_listener(event::Type::ServerBoundPacket, [this](const event::Event& event) {
             const auto raw_packet{ dynamic_cast<const event::RawPacketEvent*>(&event) };
             if (!raw_packet) {
+                return;
+            }
+
+            if (flow_) {
+                flow_->forward(event::Direction::ServerBound, raw_packet->data);
                 return;
             }
 

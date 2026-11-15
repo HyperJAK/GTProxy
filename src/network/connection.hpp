@@ -1,5 +1,7 @@
 #pragma once
+#include <cstdint>
 #include <span>
+#include <string>
 #include <vector>
 
 #include "../packet/packet_helper.hpp"
@@ -18,5 +20,9 @@ public:
     }
 
     [[nodiscard]] virtual bool is_connected() const = 0;
+
+    // Optional diagnostics used by the control plane status view.
+    [[nodiscard]] virtual std::uint32_t round_trip_ms() const { return 0; }
+    [[nodiscard]] virtual std::string peer_description() const { return {}; }
 };
 }

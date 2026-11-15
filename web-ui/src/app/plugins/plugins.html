@@ -1,0 +1,40 @@
+<div class="bar">
+  <h2>Plugins</h2>
+  <span class="muted">Lua plugins from the proxy's <code>plugins/</code> folder. New plugins start disabled.</span>
+  <span class="spacer"></span>
+  <button class="btn" (click)="act('rescan')">Rescan folder</button>
+</div>
+@if (error()) { <p class="err" role="alert">{{ error() }}</p> }
+
+<div class="split">
+  <ul class="list" aria-label="Plugins">
+    @for (p of plugins(); track p.name) {
+      <li [class.sel]="p.name === selected()" (click)="select(p.name)">
+        <div class="row">
+          <label class="switch" (click)="$event.stopPropagation()">
+            <input type="checkbox" [checked]="p.enabled" (change)="act($any($event.target).checked ? 'enable' : 'disable', p.name)" [attr.aria-label]="'Enable ' + p.name" />
+            <strong>{{ p.name }}</strong>
+          </label>
+          <span class="muted">{{ p.version }}</span>
+          <span class="spacer"></span>
+          <button class="btn" [disabled]="!p.enabled" (click)="act('reload', p.name); $event.stopPropagation()">Reload</button>
+        </div>
+        @if (p.description) { <p class="muted desc">{{ p.description }}</p> }
+        <p class="meta">
+          <span [class.ok]="p.loaded" [class.bad]="p.enabled && !p.loaded">{{ p.loaded ? 'running' : p.enabled ? 'failed to load' : 'disabled' }}</span>
+          · {{ p.packets }} packets
+          @if (p.errors) { · <span class="bad">{{ p.errors }} errors</span> }
+        </p>
+        @if (p.error) { <p class="bad small">{{ p.error }}</p> }
+      </li>
+    } @empty {
+      <li class="empty">No plugins found. Put a folder with a <code>main.lua</code> into the plugins directory.</li>
+    }
+  </ul>
+
+  <section class="logs" aria-label="Plugin log">
+    <h3>Log {{ selected() ? '— ' + selected() : '' }}</h3>
+    <pre>@for (l of logs(); track $index) {<span class="l-{{ l.level }}">{{ time(l.ts) }} {{ l.level.padEnd(5) }} {{ l.message }}
+</span>} @empty {(no log output yet)}</pre>
+  </section>
+</div>

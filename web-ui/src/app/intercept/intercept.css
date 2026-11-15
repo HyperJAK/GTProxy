@@ -1,0 +1,15 @@
+:host { display: block; padding: .75rem 1rem; }
+.bar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: .6rem; }
+.spacer { flex: 1; } .muted { color: var(--muted); font-size: .82rem; }
+.switch { display: inline-flex; gap: .4rem; align-items: center; }
+.err { color: var(--bad); margin: .3rem 0; }
+.rules { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: .5rem .75rem; margin-bottom: .75rem; }
+.rules table td { padding: .15rem .25rem; }
+.split { display: grid; grid-template-columns: 22rem 1fr; gap: 1rem; align-items: start; }
+.queue { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; max-height: 70vh; overflow: auto; }
+.queue li { display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap; padding: .4rem .6rem; border-bottom: 1px solid var(--border); cursor: pointer; }
+.queue li.sel { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.queue li.empty { cursor: default; color: var(--muted); }
+.edit { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: .75rem; }
+.edit header { display: flex; gap: .5rem; align-items: center; margin-bottom: .6rem; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }

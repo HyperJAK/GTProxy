@@ -250,7 +250,7 @@ struct ItemChangeObject : GamePacket<PacketId::ItemChangeObject, PACKET_ITEM_CHA
     std::uint16_t pos_y;
     std::uint16_t item_id;
     std::uint16_t amount;
-    std::uint8_t object_change_type;
+    std::int32_t object_change_type; // -1 = new drop, -3 = update, else pickup (as the world handler assumes)
     std::uint16_t item_net_id;
 
     bool read(const Payload& payload) override
@@ -264,7 +264,7 @@ struct ItemChangeObject : GamePacket<PacketId::ItemChangeObject, PACKET_ITEM_CHA
 
         pos_x = game_packet.int_x;
         pos_y = game_packet.int_y;
-        object_change_type = static_cast<std::uint8_t>(game_packet.object_change_type);
+        object_change_type = game_packet.object_change_type;
         item_net_id = static_cast<std::uint16_t>(game_packet.item_net_id);
         amount = static_cast<std::uint16_t>(game_packet.int_data);
         item_id = static_cast<std::uint16_t>(game_packet.item_id);

@@ -1,0 +1,78 @@
+<section class="toolbar" aria-label="Packet filters">
+  <select aria-label="Direction" [value]="dir()" (change)="dir.set($any($event.target).value)">
+    <option value="all">both directions</option>
+    <option value="server_bound">→ to server</option>
+    <option value="client_bound">← to client</option>
+  </select>
+
+  <span class="kinds" role="group" aria-label="Packet kinds">
+    @for (k of kinds; track k) {
+      <button class="chip k-{{ k }}" [class.on]="activeKinds().has(k)" [attr.aria-pressed]="activeKinds().has(k)" (click)="toggleKind(k)">{{ k }}</button>
+    }
+  </span>
+
+  <input type="search" placeholder="search text / name…" aria-label="Text search" [value]="text()" (input)="text.set($any($event.target).value)" />
+  <input type="search" class="mono" placeholder="hex bytes: de ad be ef" aria-label="Hex search" [class.bad]="hexInvalid()" [value]="hex()" (input)="hex.set($any($event.target).value)" />
+
+  <label class="check"><input type="checkbox" [checked]="hideProxy()" (change)="hideProxy.set($any($event.target).checked)" /> wire only</label>
+  <label class="check"><input type="checkbox" [checked]="follow()" (change)="follow.set($any($event.target).checked)" /> follow</label>
+
+  <span class="spacer"></span>
+  <button class="btn" (click)="api.setPaused(!api.paused())">
+    {{ api.paused() ? 'Resume' : 'Pause' }}@if (api.paused() && api.pendingWhilePaused() > 0) { ({{ api.pendingWhilePaused() }}) }
+  </button>
+  <button class="btn" (click)="api.clear(); selectedId.set(null)">Clear</button>
+</section>
+
+<div class="split">
+  <div class="list" #list>
+    <table>
+      <thead>
+        <tr><th>#</th><th>time</th><th>dir</th><th>kind</th><th>name</th><th>summary</th><th>len</th><th>state</th></tr>
+      </thead>
+      <tbody>
+        @for (r of visible(); track r.id) {
+          <tr class="k-{{ r.kind }} {{ r.dir }}" [class.sel]="r.id === selectedId()" [class.malformed]="r.malformed" (click)="selectedId.set(r.id)">
+            <td class="mono">{{ r.id }}</td>
+            <td class="mono">{{ time(r.ts) }}</td>
+            <td>{{ arrow(r.dir) }}</td>
+            <td><span class="kind">{{ r.kind }}</span></td>
+            <td class="name">{{ r.name }}</td>
+            <td class="summary">{{ r.summary }}</td>
+            <td class="mono">{{ r.len }}</td>
+            <td><span class="state s-{{ r.state }}">{{ r.state }}</span>@if (r.origin !== 'wire') { <em>{{ r.origin }}</em> }</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (visible().length === 0) {
+      <p class="empty">{{ api.rows().length === 0 ? 'No packets yet. Connect a client to the proxy.' : 'No packets match the filter.' }}</p>
+    }
+    <footer>
+      showing {{ visible().length }} of {{ filtered().length }} matching ({{ api.rows().length }} total)
+      @if (filtered().length > visible().length) { <button class="btn" (click)="limit.set(limit() + 500)">show 500 more</button> }
+    </footer>
+  </div>
+
+  @if (selected(); as p) {
+    <aside class="detail" aria-label="Packet detail">
+      <header>
+        <strong>#{{ p.id }} {{ p.name }}</strong>
+        <button class="btn" (click)="selectedId.set(null)" aria-label="Close detail">✕</button>
+      </header>
+      <dl>
+        <dt>direction</dt><dd>{{ arrow(p.dir) }}</dd>
+        <dt>kind</dt><dd>{{ p.kind }}@if (p.malformed) { <span class="warn"> (malformed — showing hex)</span> }</dd>
+        <dt>state</dt><dd>{{ p.state }}@if (p.by) { by {{ p.by }} }</dd>
+        <dt>origin</dt><dd>{{ p.origin }}</dd>
+        <dt>length</dt><dd>{{ p.len }} bytes</dd>
+      </dl>
+      @if (p.originalHex) { <p class="warn">Edited in flight — hex below is what was forwarded.</p> }
+      <p><button class="btn" (click)="resend(p)">Edit &amp; send in Injector</button></p>
+      <h3>Decoded</h3>
+      <pre>{{ selectedJson() }}</pre>
+      <h3>Hex <button class="btn" (click)="copyHex(p)">copy</button></h3>
+      <pre>{{ selectedDump() }}</pre>
+    </aside>
+  }
+</div>

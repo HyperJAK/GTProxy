@@ -1,0 +1,84 @@
+<div class="bar">
+  <h2>Worlds</h2>
+  <input type="search" class="search" placeholder="find an item across all visited worlds (name or id)…" aria-label="Search items across worlds"
+         [value]="query()" (input)="query.set($any($event.target).value)" (keydown.enter)="search()" />
+  <button class="btn" (click)="search()">Search</button>
+  <span class="spacer"></span>
+  <button class="btn" (click)="clearHistory()">Forget worlds</button>
+</div>
+@if (error()) { <p class="err" role="alert">{{ error() }}</p> }
+<p class="muted note">Read from the map data the proxy sees when you enter a world, plus live drop updates. History is kept in memory for this proxy run only. Vending <em>price</em> is the raw value from the packet.</p>
+
+@if (hits(); as h) {
+  <section class="card">
+    <h3>{{ h.length }} match(es) for “{{ query() }}”</h3>
+    <table>
+      <thead><tr><th>world</th><th>kind</th><th>item</th><th>qty / price</th><th>tile</th></tr></thead>
+      @for (x of h; track $index) {
+        <tr>
+          <td><button class="link" (click)="open(x.world)">{{ x.world }}</button></td>
+          <td>{{ x.kind }}@if (x.machine) { <span class="muted"> · {{ x.machine }}</span> }</td>
+          <td>{{ x.item }} <span class="muted">#{{ x.item_id }}</span></td>
+          <td class="mono">{{ x.kind === 'drop' ? '× ' + x.amount : x.kind === 'vending' ? 'price ' + x.price : '' }}</td>
+          <td class="mono">({{ x.x }}, {{ x.y }})</td>
+        </tr>
+      } @empty { <tr><td colspan="5" class="muted">Nothing found.</td></tr> }
+    </table>
+  </section>
+}
+
+<div class="split">
+  <ul class="list" aria-label="Visited worlds">
+    @for (w of worlds(); track w.name) {
+      <li [class.sel]="w.name === selected()" (click)="select(w.name)">
+        <div><strong>{{ w.name }}</strong> @if (w.current) { <span class="here">here</span> }</div>
+        <div class="muted small">{{ w.vending }} vending · {{ w.displays }} displays · {{ w.drops }} drops · {{ time(w.last_seen) }}</div>
+      </li>
+    } @empty {
+      <li class="empty">No worlds yet. Join a world through the proxy.</li>
+    }
+  </ul>
+
+  @if (detail(); as d) {
+    <section class="detail">
+      <h3>{{ d.name }} <span class="muted">{{ d.width }}×{{ d.height }} · {{ d.players }} players</span></h3>
+
+      <h4>Vending machines ({{ d.vending.length }})</h4>
+      <table>
+        <thead><tr><th>tile</th><th>machine</th><th>selling</th><th>price (raw)</th></tr></thead>
+        @for (v of d.vending; track $index) {
+          <tr><td class="mono">({{ v.x }}, {{ v.y }})</td><td>{{ v.machine }}</td><td>{{ v.item_id ? v.item : '— empty —' }}</td><td class="mono">{{ v.price }}</td></tr>
+        } @empty { <tr><td colspan="4" class="muted">None.</td></tr> }
+      </table>
+
+      @if (d.displays.length) {
+        <h4>Display blocks ({{ d.displays.length }})</h4>
+        <table>
+          @for (x of d.displays; track $index) {
+            <tr><td class="mono">({{ x.x }}, {{ x.y }})</td><td>{{ x.machine }}</td><td>{{ x.item_id ? x.item : '— empty —' }}</td></tr>
+          }
+        </table>
+      }
+
+      <h4>Dropped items — totals ({{ d.drops.length }} stacks)</h4>
+      <table>
+        <thead><tr><th>item</th><th>total</th><th>stacks</th></tr></thead>
+        @for (t of d.drop_totals; track t.item_id) {
+          <tr><td>{{ t.item }} <span class="muted">#{{ t.item_id }}</span></td><td class="mono">{{ t.total }}</td><td class="mono">{{ t.stacks }}</td></tr>
+        } @empty { <tr><td colspan="3" class="muted">None.</td></tr> }
+      </table>
+
+      @if (d.drops.length) {
+        <details>
+          <summary>Every dropped stack</summary>
+          <table>
+            <thead><tr><th>item</th><th>qty</th><th>tile</th><th>object</th></tr></thead>
+            @for (x of d.drops; track x.object_id) {
+              <tr><td>{{ x.item }}</td><td class="mono">{{ x.amount }}</td><td class="mono">({{ x.x }}, {{ x.y }})</td><td class="mono muted">{{ x.object_id }}</td></tr>
+            }
+          </table>
+        </details>
+      }
+    </section>
+  }
+</div>

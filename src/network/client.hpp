@@ -5,6 +5,7 @@
 
 #include "connection.hpp"
 #include "enet_wrapper.hpp"
+#include "wire_tap.hpp"
 #include "../core/config.hpp"
 #include "../event/event.hpp"
 #include "../packet/packet_decoder.hpp"
@@ -23,6 +24,10 @@ public:
     void disconnect_now();
 
     [[nodiscard]] bool is_connected() const override;
+    [[nodiscard]] std::uint32_t round_trip_ms() const override;
+    [[nodiscard]] std::string peer_description() const override;
+
+    void set_wire_tap(IWireTap* tap) { tap_ = tap; }
 
     void flush() const;
 
@@ -39,5 +44,6 @@ private:
 
     event::Dispatcher& dispatcher_;
     ENetPeer* peer_;
+    IWireTap* tap_{ nullptr };
 };
 }

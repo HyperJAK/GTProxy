@@ -1,0 +1,31 @@
+name: CI (Linux, system deps)
+
+on:
+  push:
+    branches: ['develop', 'feature/**', 'ccr-*']
+  pull_request:
+
+jobs:
+  core-and-ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: scripts/dev/linux-deps.sh "$HOME/deps"
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug -DGTPROXY_USE_CONAN=OFF -DCMAKE_PREFIX_PATH="$HOME/deps"
+          cmake --build build -j"$(nproc)"
+      - name: C++ tests
+        run: ctest --test-dir build --output-on-failure
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: UI build and tests
+        working-directory: web-ui
+        run: |
+          npm ci
+          npm run build
+          npx ng test --watch=false

@@ -1,0 +1,66 @@
+<div class="bar">
+  <label class="switch">
+    <input type="checkbox" [checked]="state()?.enabled" (change)="toggle($any($event.target).checked)" />
+    <strong>Intercept {{ state()?.enabled ? 'ON' : 'off' }}</strong>
+  </label>
+  <span class="muted">Matching packets are held before they are forwarded; later packets in the same direction queue behind them to keep order.</span>
+  <span class="spacer"></span>
+  <button class="btn" [disabled]="held().length === 0" (click)="releaseAll(false)">Forward all</button>
+  <button class="btn danger" [disabled]="held().length === 0" (click)="releaseAll(true)">Drop all</button>
+</div>
+
+@if (error()) { <p class="err" role="alert">{{ error() }}</p> }
+
+<details class="rules" [open]="shownRules().length > 0">
+  <summary>Rules ({{ shownRules().length || 'hold everything' }})</summary>
+  <table>
+    @for (r of shownRules(); track $index; let i = $index) {
+      <tr>
+        <td>
+          <select [value]="r.direction" (change)="setRule(i, { direction: $any($event.target).value })">
+            <option value="any" [selected]="r.direction === 'any'">either direction</option>
+            <option value="server_bound" [selected]="r.direction === 'server_bound'">→ to server</option>
+            <option value="client_bound" [selected]="r.direction === 'client_bound'">← to client</option>
+          </select>
+        </td>
+        <td>
+          <select [value]="r.kind" (change)="setRule(i, { kind: $any($event.target).value })">
+            @for (k of ['', 'text', 'variant', 'game', 'hello', 'raw']; track k) { <option [value]="k" [selected]="k === r.kind">{{ k || 'any kind' }}</option> }
+          </select>
+        </td>
+        <td><input placeholder="name or text contains…" [value]="r.match" (input)="setRule(i, { match: $any($event.target).value })" /></td>
+        <td><button class="btn" (click)="removeRule(i)" aria-label="Remove rule">✕</button></td>
+      </tr>
+    }
+  </table>
+  <button class="btn" (click)="addRule()">+ rule</button>
+  <button class="btn primary" (click)="applyRules()">Apply rules</button>
+  <span class="muted"> No rules = hold every packet while intercept is on.</span>
+</details>
+
+<div class="split">
+  <ul class="queue" aria-label="Held packets">
+    @for (h of held(); track h.id) {
+      <li [class.sel]="h.id === selected()?.id" (click)="select(h)">
+        <span class="mono">#{{ h.id }}</span>
+        <span>{{ h.dir === 'server_bound' ? '→ server' : '← client' }}</span>
+        <strong>{{ h.name }}</strong>
+        <span class="muted">{{ h.len }} B{{ h.by_rule ? '' : ' · queued (order)' }}</span>
+      </li>
+    } @empty {
+      <li class="empty">Nothing held. {{ state()?.enabled ? 'Waiting for matching packets…' : 'Turn intercept on to start holding packets.' }}</li>
+    }
+  </ul>
+
+  @if (selected(); as h) {
+    <section class="edit">
+      <header>
+        <strong>#{{ h.id }} {{ h.name }}</strong>
+        <span class="spacer"></span>
+        <button class="btn primary" (click)="forward(h)">{{ dirty() && loadedFor === h.id ? 'Forward edited' : 'Forward' }}</button>
+        <button class="btn danger" (click)="drop(h)">Drop</button>
+      </header>
+      <app-packet-editor [initial]="initialSpec()" (specChange)="edited.set($event)" (dirty)="dirty.set($event)" />
+    </section>
+  }
+</div>

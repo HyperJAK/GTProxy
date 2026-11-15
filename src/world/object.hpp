@@ -30,8 +30,11 @@ struct Object {
     void serialize(utils::ByteStream<>& bs, const std::uint16_t version)
     {
         bs.read(item_id);
-        bs.read(pos.x);
-        bs.read(pos.y);
+        float x{ 0.0f };
+        float y{ 0.0f };
+        bs.read(x);
+        bs.read(y);
+        pos = glm::ivec2{ static_cast<int>(x), static_cast<int>(y) };
         bs.read(amount);
         bs.read(flags);
         bs.read(object_id);

@@ -1,0 +1,35 @@
+<div class="layout">
+  <section class="main">
+    <header>
+      <label>Send to
+        <select [value]="dir()" (change)="dir.set($any($event.target).value)">
+          <option value="server_bound" [selected]="dir() === 'server_bound'">→ server (as if from the client)</option>
+          <option value="client_bound" [selected]="dir() === 'client_bound'">← game client (as if from the server)</option>
+        </select>
+      </label>
+      <span class="spacer"></span>
+      <button class="btn primary" (click)="send()">Send packet</button>
+    </header>
+    @if (message(); as m) { <p class="msg" [class.bad]="!m.ok" role="status">{{ m.text }}</p> }
+    <app-packet-editor [initial]="initial()" (specChange)="spec.set($event)" />
+  </section>
+
+  <aside class="templates">
+    <h2>Templates</h2>
+    <ul>
+      @for (t of templates(); track t.name) {
+        <li>
+          <button class="link" (click)="load(t)" [title]="t.description">{{ t.name }}</button>
+          <span class="muted">{{ t.dir === 'server_bound' ? '→' : '←' }}</span>
+          <button class="btn" (click)="remove(t)" [attr.aria-label]="'Delete template ' + t.name">✕</button>
+        </li>
+      } @empty {
+        <li class="muted">No templates yet.</li>
+      }
+    </ul>
+    <h3>Save current packet</h3>
+    <input placeholder="template name" [value]="templateName()" (input)="templateName.set($any($event.target).value)" />
+    <input placeholder="description (optional)" [value]="templateDesc()" (input)="templateDesc.set($any($event.target).value)" />
+    <button class="btn" [disabled]="!canSave()" (click)="save()">Save template</button>
+  </aside>
+</div>

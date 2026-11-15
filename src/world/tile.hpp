@@ -84,13 +84,15 @@ struct Tile {
 
     [[nodiscard]] static bool idiot_growtopia_dev(const std::uint16_t fg, const std::uint16_t bg)
     {
-        const auto item_database{ &item::ItemDatabase::instance() };
-        return (
-            item_database->get_item(fg)->item_type == item::ItemType::Lock ||
-            item_database->get_item(fg)->item_type == item::ItemType::Door ||
-            item_database->get_item(fg)->item_type == item::ItemType::Vending ||
-            item_database->get_item(fg)->item_type == item::ItemType::DisplayBlock
-        );
+        const auto item{ item::ItemDatabase::instance().get_item(fg) };
+        if (!item) {
+            return false; // items.dat not loaded yet, or unknown id
+        }
+
+        return item->item_type == item::ItemType::Lock ||
+            item->item_type == item::ItemType::Door ||
+            item->item_type == item::ItemType::Vending ||
+            item->item_type == item::ItemType::DisplayBlock;
     }
 
     [[nodiscard]] std::string flag_to_string() const
